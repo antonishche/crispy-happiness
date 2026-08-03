@@ -1,0 +1,4 @@
+id,name,weight,health_restore
+food_apple,Яблоко,0.3,5
+food_bread,Хлеб,0.5,12
+food_meat,Жареное мясо,1.0,25

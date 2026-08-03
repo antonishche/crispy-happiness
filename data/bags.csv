@@ -1,0 +1,4 @@
+id,name,weight,slots_bonus,weight_bonus
+bag_none,Без рюкзака,0.0,0,0.0
+bag_small,Маленький рюкзак,1.0,3,10.0
+bag_medium,Средний рюкзак,2.0,6,20.0

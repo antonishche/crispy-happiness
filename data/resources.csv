@@ -1,0 +1,4 @@
+id,name,weight,max_stack
+res_wood,Древесина,2.0,40
+res_stone,Булыжник,3.0,40
+res_fiber,Волокно,1.0,60

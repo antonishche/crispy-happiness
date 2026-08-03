@@ -1,0 +1,4 @@
+id,name,weight,damage
+weapon_fist,Кулак,0.0,1
+weapon_wooden_sword,Деревянный меч,3.0,8
+weapon_iron_sword,Железный меч,5.0,15

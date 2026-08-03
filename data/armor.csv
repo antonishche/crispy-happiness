@@ -1,0 +1,4 @@
+id,name,weight,armor
+armor_naked,Голый,0.0,0
+armor_leather,Кожаная броня,4.0,5
+armor_iron,Железная броня,10.0,12
