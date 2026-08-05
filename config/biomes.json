@@ -1,0 +1,42 @@
+{
+    "grass": {
+        "blocked": false,
+        "objects_chance": {
+            "tree": 0.01,
+            "stone": 0.01,
+            "bush": 0.02
+        },
+        "color": [34, 139, 34]
+    },
+    "forest": {
+        "blocked": false,
+        "objects_chance": {
+            "tree": 0.20,
+            "stone": 0.05,
+            "bush": 0.10
+        },
+        "color": [0, 100, 0]
+    },
+    "desert": {
+        "blocked": false,
+        "objects_chance": {
+            "stone": 0.05
+        },
+        "color": [237, 201, 175]
+    },
+    "mountain": {
+        "blocked": true,
+        "objects_chance": {
+            "stone": 0.40
+        },
+        "color": [128, 128, 128]
+    },
+    "water": {
+        "blocked": true,
+        "color": [19, 132, 237]
+    },
+    "ocean": {
+        "blocked": true,
+        "color": [66, 75, 245]
+    }
+}

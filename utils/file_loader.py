@@ -4,7 +4,7 @@ import csv
 
 def load_csv(path):
     with open(path, "r", encoding="utf-8") as f:
-        reader = csv.reader(f)
+        reader = csv.DictReader(f)
         next(reader)
         return list(reader)
 

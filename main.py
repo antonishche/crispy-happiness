@@ -4,8 +4,8 @@ from core.camera import Camera
 from core.chunk_system import ChunkSystem
 from systems.map_generator import MapGenerator
 from entities.player import Player
-from config.biomes import (
-    BIOME_CONFIGS
+from utils.math_helpers import (
+    find_save_spot
 )
 
 
@@ -32,38 +32,6 @@ def draw_world(screen: pygame.Surface, camera: Camera, chunk_system: ChunkSystem
 
         screen.blit(chunk["visual_surface"], (screen_x, screen_y))
 
-
-def find_save_spot(center_chunk) -> tuple:
-    ALL_OBJECT_NAMES = {
-        obj_name
-        for config in BIOME_CONFIGS.values()
-        for obj_name, _ in config.get("objects_chance", [])
-    }
-
-    for y in range(settings.CHUNK_SIZE):
-        for x in range(settings.CHUNK_SIZE):
-            tile = center_chunk["tiles"][y][x]
-
-            has_barrier = (
-                tile["blocked"] or
-                any(tile.get(obj) for obj in ALL_OBJECT_NAMES)
-            )
-
-            if not has_barrier:
-                px = x * settings.TILE_SIZE + settings.TILE_SIZE // 2
-                py = y * settings.TILE_SIZE + settings.TILE_SIZE // 2
-                return px, py
-
-    emergency_tile = center_chunk["tiles"][0][0]
-    emergency_tile["blocked"] = False
-    for obj in ALL_OBJECT_NAMES:
-        emergency_tile[obj] = False
-
-    px = 0 * settings.TILE_SIZE + settings.TILE_SIZE // 2
-    py = 0 * settings.TILE_SIZE + settings.TILE_SIZE // 2
-    return px, py
-
-
 def main():
     pygame.init()
     screen = pygame.display.set_mode((
@@ -83,7 +51,7 @@ def main():
     spawn_x, spawn_y = find_save_spot(center_chunk)
     player = Player(spawn_x, spawn_y)
 
-    chunk_system.update(player.x, player.y, generator.generate_chunk)
+    chunk_system.update(player.rect.x, player.rect.y, generator.generate_chunk)
 
     running = True
     while running:
@@ -99,15 +67,8 @@ def main():
         screen.fill((0, 0, 0))
         draw_world(screen, camera, chunk_system)
 
-        # Рисунок игрока
-        player_screen_pos = camera.apply_point(player.x, player.y)
-        player_coords = (
-            player_screen_pos[0] - 16,
-            player_screen_pos[1] - 16,
-            32,
-            32
-        )
-        pygame.draw.rect(screen, (255, 0, 0), player_coords)
+        player_screen_rect = camera.apply(player.rect)
+        pygame.draw.rect(screen, (255, 0, 0), player_screen_rect)
 
         pygame.display.flip()
         clock.tick(settings.FPS)

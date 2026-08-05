@@ -30,6 +30,11 @@ class ChunkSystem:
         player_chunk_x, player_chunk_y = self.world_to_chunk(player_world_x, player_world_y)
         chunks_around = self.get_chunk_coords_around(player_chunk_x, player_chunk_y)
 
+        self._process_chunks_around(chunks_around, chunk_generator)
+        self._unload_extra_chunks(chunks_around)
+        self._delete_expired_chunks()
+
+    def _process_chunks_around(self, chunks_around, chunk_generator):
         for coord in chunks_around:
             if coord in self.loaded_chunks:
                 continue
@@ -41,6 +46,7 @@ class ChunkSystem:
             else:
                 self.loaded_chunks[coord] = chunk_generator(coord[0], coord[1])
 
+    def _unload_extra_chunks(self, chunks_around):
         to_unload = []
         for coord in self.loaded_chunks:
             if coord not in chunks_around:
@@ -52,12 +58,13 @@ class ChunkSystem:
             timer.start()
             self.cached_chunks[coord] = chunk
 
+    def _delete_expired_chunks(self):
         expired = []
         for coord, data in self.cached_chunks.items():
             timer = data["timer"]  # type: Timer
             if timer.is_expired():
                 expired.append(coord)
-
+  
         for coord in expired:
             del self.cached_chunks[coord]
 

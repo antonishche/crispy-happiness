@@ -9,20 +9,6 @@ SEED = 42
 
 CACHE_TIMEOUT = 300
 
-DATA_PATH = "data/"
-ASSETS_PATH = "assets/"
-SAVES_PATH = "saves/"
-
-ITEMS_WEAPONS_CSV = DATA_PATH + "weapons.csv"
-ITEMS_ARMOR_CSV = DATA_PATH + "armor.csv"
-ITEMS_FOOD_CSV = DATA_PATH + "food.csv"
-ITEMS_RESOURCES_CSV = DATA_PATH + "resources.csv"
-ITEMS_BAGS_CSV = DATA_PATH + "bags.csv"
-ENEMIES_CSV = DATA_PATH + "enemies.csv"
-MAP_ANCHORS_JSON = DATA_PATH + "map_anchors.json"
-VILLAGE_PREFABS_JSON = DATA_PATH + "village_prefabs.json"
-LEVEL_BONUSES_JSON = DATA_PATH + "level_bonuses.json"
-
 PLAYER_START_HP = 100
 PLAYER_START_SLOTS = 5
 PLAYER_START_WEIGHT = 20.0
