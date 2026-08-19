@@ -1,5 +1,6 @@
 import pygame
 import settings
+from functions.player_animation_loader import load_player_animations
 from core.chunk_system import ChunkSystem
 from core.resource_manager import ResourceManager
 from config.map.biomes.biomes_config import (
@@ -37,52 +38,7 @@ class Player:
         self.frame_duration = 0.15
         self.afk_timer = 0.0
         self.resource_manager = resource_manager  # type: ResourceManager
-        self._init_player_animations()
-
-    def _init_player_animations(self):
-        target_animations = ["idle_left", "walk_left", "dead_left"]
-        target_height = 64
-
-        for anim_key in target_animations:
-            if anim_key not in PLAYER_SPRITES:
-                continue
-
-            config = PLAYER_SPRITES[anim_key]
-
-            sheet = self.resource_manager.load_image(config["path"])
-
-            w_count = config.get("width_count", config.get("width", 1))
-            h_count = config.get("height_count", config.get("height", 1))
-
-            calc_w = sheet.get_width() // w_count
-            calc_h = sheet.get_height() // h_count
-
-            raw_frames = self.resource_manager.load_spritesheet(
-                config["path"],
-                calc_w,
-                calc_h,
-                colorkey=None
-            )
-
-            needed_frames = raw_frames[:config["count"]]
-            scaled_frames = []
-    
-            for frame in needed_frames:
-                orig_w = frame.get_width()
-                orig_h = frame.get_height()
-
-                new_w = int((orig_w * target_height) / orig_h)
-                scaled_surf = pygame.transform.scale(frame, (new_w, target_height))
-                scaled_frames.append(scaled_surf)
-
-            global_key_left = f"player_{anim_key}"
-            self.resource_manager.animations[global_key_left] = scaled_frames
-
-            anim_type = anim_key.split('_')[0]
-            global_key_right = f"player_{anim_type}_right"
-
-            mirror_frames = [pygame.transform.flip(frame, True, False) for frame in scaled_frames]
-            self.resource_manager.animations[global_key_right] = mirror_frames
+        load_player_animations(self.resource_manager)
 
     def _move_x(self, dx):
         self.rect.x += dx
@@ -91,16 +47,21 @@ class Player:
         self.rect.y += dy
 
     def _move_player(self, dx, dy, chunk_system: ChunkSystem):
+        if dx == 0 and dy == 0:
+            return
+        
         # X
-        old_x = self.rect.x
-        self._move_x(dx)
-        if self._collides_with_world(chunk_system):
-            self.rect.x = old_x
+        if dx != 0:
+            old_x = self.rect.x
+            self._move_x(dx)
+            if self._collides_with_world(chunk_system):
+                self.rect.x = old_x
         # Y
-        old_y = self.rect.y
-        self._move_y(dy)
-        if self._collides_with_world(chunk_system):
-            self.rect.y = old_y
+        if dy != 0:
+            old_y = self.rect.y
+            self._move_y(dy)
+            if self._collides_with_world(chunk_system):
+                self.rect.y = old_y
 
         self.x = self.rect.centerx
         self.y = self.rect.bottom
@@ -215,42 +176,6 @@ class Player:
 
         surface.blit(current_frame, (draw_x, draw_y))
 
-    def _collides_with_tile_object(self, tile_object_name, tile_x, tile_y):
-        if tile_object_name not in OBJECT_PADDINGS:
-            return False
-        
-        tile_world_x = tile_x * settings.TILE_SIZE
-        tile_world_y = tile_y * settings.TILE_SIZE
-        
-        hb_w, hb_h = BIOME_OBJECTS_CONFIG[tile_object_name]["hit_box"]
-        padding_x = OBJECT_PADDINGS[tile_object_name]["padding_x"]
-        padding_y = OBJECT_PADDINGS[tile_object_name]["padding_y"]
-        
-        obj_left = tile_world_x + padding_x
-        obj_right = obj_left + hb_w
-        obj_top = tile_world_y + padding_y
-        obj_bottom = obj_top + hb_h
-
-        if (
-            self.rect.left < obj_right and
-            self.rect.right > obj_left and
-            self.rect.top < obj_bottom and
-            self.rect.bottom > obj_top
-        ):
-            return True
-        return False
-
-    def _get_chunk_from_tile_coords(self, chunk_system: ChunkSystem, tile_x, tile_y):
-        chunk_coords = chunk_system.world_to_chunk_tile(tile_x, tile_y)
-        chunk = chunk_system.loaded_chunks.get(chunk_coords)
-        return chunk
-
-    def _get_tile_from_chunk(self, chunk, tile_x, tile_y):
-        local_x = int(tile_x % settings.CHUNK_SIZE)
-        local_y = int(tile_y % settings.CHUNK_SIZE)
-        tile = chunk["tiles"][local_y][local_x]
-        return tile
-
     def _collides_with_world(self, chunk_system: ChunkSystem):
         start_tile_x = int(self.rect.left // settings.TILE_SIZE)
         end_tile_x = int(self.rect.right // settings.TILE_SIZE)
@@ -271,15 +196,19 @@ class Player:
                 if last_chunk is None:
                     return True
 
-                tile = self._get_tile_from_chunk(last_chunk, tile_x, tile_y)  # type: dict
+                tile = last_chunk["tiles"][int(tile_y % settings.CHUNK_SIZE)][int(tile_x % settings.CHUNK_SIZE)]
                 if BIOME_CONFIG[tile["biome_name"]]["blocked"]:
                     return True
 
                 tile_object = tile.get("object")
-                if tile_object is None:
-                    continue
-
-                if self._collides_with_tile_object(tile_object, tile_x, tile_y):
-                    return True
+                if tile_object and tile_object in OBJECT_PADDINGS:
+                    hb_w, hb_h = BIOME_OBJECTS_CONFIG[tile_object]["hit_box"]
+                    obj_rect = pygame.Rect(
+                        tile_x * settings.TILE_SIZE + OBJECT_PADDINGS[tile_object]["padding_x"],
+                        tile_y * settings.TILE_SIZE + OBJECT_PADDINGS[tile_object]["padding_y"],
+                        hb_w, hb_h
+                    )
+                    if self.rect.colliderect(obj_rect):
+                        return True
 
         return False

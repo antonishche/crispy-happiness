@@ -1,4 +1,5 @@
 import pygame
+from functions.placeholder_generator import generate_placeholder_sprites
 
 
 class ResourceManager:
@@ -6,7 +7,7 @@ class ResourceManager:
     def __init__(self):
         self.sprites = {}
         self.animations = {}
-        self.generate_placeholder_sprites()
+        generate_placeholder_sprites(self)
 
     def load_image(self, path, colorkey=None):
         if path in self.sprites:
@@ -45,40 +46,4 @@ class ResourceManager:
 
     def get_animation(self, name):
         return self.animations.get(name, [])
-
-    def generate_placeholder_sprites(self):
-        size = 64
-        states = ["idle", "walk"]
-        directions = [
-            "left", "right"
-        ]
-
-        for state in states:
-            frame_count = 1 if state == "idle" else 2
-            for direction in directions:
-                frames = []
-                for i in range(frame_count):
-                    surf = pygame.Surface((size, size))
-                    surf.fill((255, 0, 255))
-
-                    body_rect = pygame.Rect(8, 8, 48, 48)
-                    if i == 1:
-                        body_rect.y += 2
-
-                    pygame.draw.rect(surf, (200, 50, 50), body_rect)
-
-                    eye_color = (255, 220, 50)
-
-                    if direction == "left":
-                        pygame.draw.rect(surf, eye_color, (0, 20, 8, 24))
-                    elif direction == "right":
-                        pygame.draw.rect(surf, eye_color, (56, 20, 8, 24))
-
-                    surf.set_colorkey((255, 0, 255))
-                    surf = surf.convert()
-
-                    frames.append(surf)
-
-                key = f"default_{state}_{direction}"
-                self.animations[key] = frames
                 

@@ -5,9 +5,7 @@ from core.chunk_system import ChunkSystem
 from systems.map_generator import MapGenerator
 from entities.player import Player
 from core.resource_manager import ResourceManager
-from utils.math_helpers import (
-    find_save_spot
-)
+from functions.save_spot_finder import find_save_spot
 from config.map.biome_objects.biome_objects_config import (
     BIOME_OBJECTS_CONFIG
 )
