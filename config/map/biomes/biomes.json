@@ -2,27 +2,31 @@
     "grass": {
         "blocked": false,
         "objects_chance": {
-            "tree": 0.01,
-            "stone": 0.01,
-            "bush": 0.02
+            "tree_fir": 0.01,
+            "tree_oak": 0.01,
+            "stone": 0.005,
+            "flower": 0.02
         },
-        "color": [34, 139, 34]
+        "color": [34, 139, 34],
+        "sprite_path": "grass_debug.png"
     },
     "forest": {
         "blocked": false,
         "objects_chance": {
-            "tree": 0.20,
+            "tree_oak": 0.05,
             "stone": 0.05,
-            "bush": 0.10
+            "flower": 0.05
         },
-        "color": [0, 100, 0]
+        "color": [0, 100, 0],
+        "sprite_path": "forest_debug.png"
     },
     "desert": {
         "blocked": false,
         "objects_chance": {
             "stone": 0.05
         },
-        "color": [237, 201, 175]
+        "color": [237, 201, 175],
+        "sprite_path": "desert_debug.png"
     },
     "mountain": {
         "blocked": true,
@@ -33,7 +37,8 @@
     },
     "water": {
         "blocked": true,
-        "color": [19, 132, 237]
+        "color": [19, 132, 237],
+        "sprite_path": "water_debug.png"
     },
     "ocean": {
         "blocked": true,

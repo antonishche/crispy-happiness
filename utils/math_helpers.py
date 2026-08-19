@@ -1,5 +1,5 @@
 import settings
-from config.biomes_config import (
+from config.map.biomes.biomes_config import (
     BIOME_CONFIG
 )
 

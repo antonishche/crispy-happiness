@@ -1,0 +1,21 @@
+{
+    "tree_oak": {
+        "color": [139, 69, 19],
+        "hit_box": [40, 20],
+        "sprite_path": "oak.png"
+    },
+    "tree_fir": {
+        "color": [139, 69, 19],
+        "hit_box": [20, 10],
+        "sprite_path": "fir.png"
+    },
+    "stone": {
+        "color": [169, 169, 169],
+        "hit_box": [24, 15],
+        "sprite_path": "stone.png"
+    },
+    "flower": {
+        "color": [42, 212, 87],
+        "sprite_path": "flower.png"
+    }
+}

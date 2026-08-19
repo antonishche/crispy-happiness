@@ -1,5 +1,5 @@
 from utils.timer import Timer
-import settings
+import settings as settings
 
 
 class ChunkSystem:
@@ -7,11 +7,12 @@ class ChunkSystem:
     def __init__(self):
         self.loaded_chunks = {}
         self.cached_chunks = {}
+        self.chunk_pixel_size = settings.CHUNK_SIZE * settings.TILE_SIZE
+        self.current_player_chunk = None
 
     def world_to_chunk(self, world_x, world_y):
-        chunk_pixel_size = settings.CHUNK_SIZE * settings.TILE_SIZE
-        chunk_x = world_x // chunk_pixel_size
-        chunk_y = world_y // chunk_pixel_size
+        chunk_x = world_x // self.chunk_pixel_size
+        chunk_y = world_y // self.chunk_pixel_size
         return (chunk_x, chunk_y)
 
     def world_to_chunk_tile(self, tile_x, tile_y):
@@ -27,12 +28,16 @@ class ChunkSystem:
         return coords
 
     def update(self, player_world_x, player_world_y, chunk_generator):
-        player_chunk_x, player_chunk_y = self.world_to_chunk(player_world_x, player_world_y)
-        chunks_around = self.get_chunk_coords_around(player_chunk_x, player_chunk_y)
+        self._delete_expired_chunks()
+
+        new_chunk = self.world_to_chunk(player_world_x, player_world_y)
+        if self.current_player_chunk == new_chunk:
+            return
+        self.current_player_chunk = (new_chunk[0], new_chunk[1])
+        chunks_around = self.get_chunk_coords_around(new_chunk[0], new_chunk[1])
 
         self._process_chunks_around(chunks_around, chunk_generator)
         self._unload_extra_chunks(chunks_around)
-        self._delete_expired_chunks()
 
     def _process_chunks_around(self, chunks_around, chunk_generator):
         for coord in chunks_around:
@@ -59,6 +64,9 @@ class ChunkSystem:
             self.cached_chunks[coord] = chunk
 
     def _delete_expired_chunks(self):
+        if not self.cached_chunks:
+            return
+
         expired = []
         for coord, data in self.cached_chunks.items():
             timer = data["timer"]  # type: Timer
