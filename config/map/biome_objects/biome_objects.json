@@ -2,20 +2,34 @@
     "tree_oak": {
         "color": [139, 69, 19],
         "hit_box": [40, 20],
-        "sprite_path": "oak.png"
+        "category": "trees",
+        "folder": "oak",
+        "sprite_bottom_margin": 10,
+        "sprite_left_margin": 5
     },
     "tree_fir": {
         "color": [139, 69, 19],
         "hit_box": [20, 10],
-        "sprite_path": "fir.png"
+        "category": "trees",
+        "folder": "fir",
+        "sprite_bottom_margin": 5
     },
     "stone": {
         "color": [169, 169, 169],
-        "hit_box": [24, 15],
-        "sprite_path": "stone.png"
+        "hit_box": [34, 15],
+        "category": "stones",
+        "folder": "stone",
+        "sprite_bottom_margin": 5
+    },
+    "bush": {
+        "color": [139, 69, 19],
+        "category": "bushes",
+        "folder": "bush",
+        "sprite_bottom_margin": 10
     },
     "flower": {
         "color": [42, 212, 87],
-        "sprite_path": "flower.png"
+        "category": "flowers",
+        "folder": "pink_flower" 
     }
 }

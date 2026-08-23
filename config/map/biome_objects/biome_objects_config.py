@@ -1,43 +1,68 @@
+import glob
 import imagesize
 import settings as settings
-from utils.path_constructor import create_path
+from utils.path_constructor import create_path, path_exists
 import paths.paths as paths
 from config.map.biomes.biomes_config import biome_objects  # type: dict
 
 
-BIOME_OBJECTS_CONFIG = {
-    object_name: {
-        "name": object_name,
-        "color": tuple(data.get("color", [0, 0, 0])),
-        "hit_box": (
-            tuple(data["hit_box"])
-            if (data.get("hit_box") and any(data["hit_box"]))
-            else None
-        ),
-        "sprite_path": create_path(paths.BIOME_OBJECTS_SPRITES, data["sprite_path"])
-        if data.get("sprite_path")
-        else None,
-    }
-    for object_name, data in biome_objects.items()
-}
+BIOME_OBJECTS_CONFIG = {}
+OBJECT_PADDINGS = {}
+OBJECT_SPRITES_GEOMETRY = {}
 
 half_tile_size = settings.TILE_SIZE // 2
+SUB_DIVISIONS = settings.SUB_DIVISIONS
+SUB_TILE_SIZE = settings.SUB_TILE_SIZE
 
-OBJECT_SPRITES_INFO = {}
-OBJECT_PADDINGS = {}
-OBJECT_SPRITES_POSITIONS = {}
+for object_name, data in biome_objects.items():
+    hit_box = (
+        tuple(data["hit_box"])
+        if (data.get("hit_box") and any(data["hit_box"]))
+        else None
+    )
 
-for object_name, config in BIOME_OBJECTS_CONFIG.items():
-    sprite_path = config.get("sprite_path")
+    sprite_paths = []
+    search_dir = None
 
-    if sprite_path:
-        w, h = imagesize.get(sprite_path)
-        OBJECT_SPRITES_INFO[object_name] = {
-            "half_width": w // 2,
-            "height": h
-        }
+    if data.get("category") and data.get("folder"):
+        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES, data["category"], data["folder"])
+    elif data.get("folder"):
+        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES, data["folder"])
+    elif data.get("category"):
+        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES, data["category"])
 
-    hit_box = config.get("hit_box")
+    if search_dir and path_exists(search_dir):
+        search_pattern = create_path(search_dir, "*.png")
+        sprite_paths = sorted(glob.glob(search_pattern))
+
+    object_subtiles = set()
+    if hit_box:
+        pad_x = (settings.TILE_SIZE - hit_box[0]) // 2
+        pad_y = (settings.TILE_SIZE - hit_box[1]) // 2
+
+        left = pad_x
+        right = pad_x + hit_box[0]
+        top = pad_y
+        bottom = pad_y + hit_box[1]
+
+        for sy in range(SUB_DIVISIONS):
+            for sx in range(SUB_DIVISIONS):
+                st_left = sx * SUB_TILE_SIZE
+                st_right = st_left + SUB_TILE_SIZE
+                st_top = sy * SUB_TILE_SIZE
+                st_bottom = st_top + SUB_TILE_SIZE
+
+                if not (st_right <= left or st_left >= right or st_bottom <= top or st_top >= bottom):
+                    object_subtiles.add((sx, sy))
+
+    BIOME_OBJECTS_CONFIG[object_name] = {
+        "name": object_name,
+        "color": tuple(data.get("color", [0, 0, 0])),
+        "hit_box": hit_box,
+        "sprite_paths": sprite_paths if sprite_paths else None,
+        "subtiles": object_subtiles
+    }
+
     if hit_box:
         pad_y = (settings.TILE_SIZE - hit_box[1]) // 2
         OBJECT_PADDINGS[object_name] = {
@@ -46,13 +71,26 @@ for object_name, config in BIOME_OBJECTS_CONFIG.items():
             "bottom_margin": settings.TILE_SIZE - pad_y
         }
 
-    if sprite_path and hit_box:
-        OBJECT_SPRITES_POSITIONS[object_name] = {
-            "x": half_tile_size - OBJECT_SPRITES_INFO[object_name]["half_width"],
-            "y": OBJECT_PADDINGS[object_name]["bottom_margin"] - OBJECT_SPRITES_INFO[object_name]["height"]
-        }
-    elif sprite_path:
-        OBJECT_SPRITES_POSITIONS[object_name] = {
-            "x": half_tile_size - OBJECT_SPRITES_INFO[object_name]["half_width"],
-            "y": settings.TILE_SIZE - OBJECT_SPRITES_INFO[object_name]["height"]
-        }
+    OBJECT_SPRITES_GEOMETRY[object_name] = []
+
+    if sprite_paths:
+        for path in sprite_paths:
+            w, h = imagesize.get(path)
+            half_width = w // 2
+            sprite_bottom_margin = data.get("sprite_bottom_margin", 0)
+            sprite_left_margin = data.get("sprite_left_margin", 0)
+
+            if hit_box:
+                sprite_x = half_tile_size - half_width - sprite_left_margin
+                sprite_y = OBJECT_PADDINGS[object_name]["bottom_margin"] - h + sprite_bottom_margin
+            else:
+                sprite_x = half_tile_size - half_width - sprite_left_margin
+                sprite_y = half_tile_size - h + sprite_bottom_margin
+
+            OBJECT_SPRITES_GEOMETRY[object_name].append({
+                "path": path,
+                "half_width": half_width,
+                "height": h,
+                "sprite_x": sprite_x,
+                "sprite_y": sprite_y
+            })

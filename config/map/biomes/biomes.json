@@ -5,7 +5,8 @@
             "tree_fir": 0.01,
             "tree_oak": 0.01,
             "stone": 0.005,
-            "flower": 0.02
+            "flower": 0.02,
+            "bush": 0.05
         },
         "color": [34, 139, 34],
         "sprite_path": "grass_debug.png"
