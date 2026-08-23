@@ -1,4 +1,5 @@
 import pygame
+import threading
 import settings as settings
 from core.camera import Camera
 from core.chunk_system import ChunkSystem
@@ -6,9 +7,6 @@ from systems.map_generator import MapGenerator
 from entities.player import Player
 from core.resource_manager import ResourceManager
 from functions.save_spot_finder import find_save_spot
-from config.map.biome_objects.biome_objects_config import (
-    BIOME_OBJECTS_CONFIG
-)
 
 
 class Game:
@@ -25,15 +23,35 @@ class Game:
         self.chunk_system = ChunkSystem()
         self.resource_manager = ResourceManager()
         self.generator = MapGenerator(self.resource_manager, seed=settings.SEED)
-        # start point
-        self.chunk_system.update(0, 0, self.generator.generate_chunk)
-        center_chunk = self.chunk_system.loaded_chunks.get((0, 0))
-        spawn_x, spawn_y = find_save_spot(center_chunk)
-        self.player = Player(spawn_x, spawn_y, self.resource_manager)
-        self.chunk_system.update(self.player.x, self.player.y, self.generator.generate_chunk)
+        # player
+        self.player = None
+        # backgroung
+        self.bg_thread = threading.Thread(
+            target=self.chunk_system._bg_generation_worker,
+            args=(self.generator.generate_chunk_math,),
+            daemon=True
+        )
+        self.bg_thread.start()
         # other
         self.chunk_pixel_size = settings.CHUNK_SIZE * settings.TILE_SIZE
         self.tile_size = settings.TILE_SIZE
+        # default
+        self.start_new_game()
+
+    def start_new_game(self):
+        raw_start_chunk = self.generator.generate_chunk_math(0, 0)
+        center_chunk = self.generator.generate_chunk_visual(raw_start_chunk)
+        self.chunk_system.loaded_chunks[(0, 0)] = center_chunk
+        
+        spawn_x, spawn_y = find_save_spot(center_chunk)
+        self.player = Player(spawn_x, spawn_y, self.resource_manager)
+        
+        self.chunk_system.update(
+            player_world_x=self.player.x,
+            player_world_y=self.player.y,
+            math_generator_func=self.generator.generate_chunk_math,
+            visual_generator_func=self.generator.generate_chunk_visual
+        )
 
     def run(self):
         while self.running:
@@ -44,6 +62,7 @@ class Game:
             self._update(dt)
             self._draw()
 
+        self.chunk_system.generation_queue.put((None, None))
         pygame.quit()
 
     def _handle_events(self):
@@ -52,10 +71,17 @@ class Game:
                 self.running = False
 
     def _update(self, dt):
+        if self.player is None:
+            return
+        
         keys = pygame.key.get_pressed()
         self.player.update(keys, self.chunk_system, dt)
         self.camera.update(self.player, dt)
-        self.chunk_system.update(self.player.x, self.player.y, self.generator.generate_chunk)
+        self.chunk_system.update(
+            self.player.x, self.player.y,
+            self.generator.generate_chunk_math,
+            self.generator.generate_chunk_visual
+        )
 
     def _draw(self):
         self.screen.fill((0, 0, 0))
@@ -69,14 +95,15 @@ class Game:
             if item["type"] == "object":
                 self.screen.blit(item["sprite"], (item["x"], item["y"]))
             elif item["type"] == "player":
-                self.player.draw(self.screen, self.camera)
+                if self.player:
+                    self.player.draw(self.screen, self.camera)
         pygame.display.flip()
 
     def _collect_objects(self):
         queue = []
 
         queue.append({
-            "sort_y": self.player.y,
+            "sort_y": self.player.y if self.player else 0,
             "type": "player"
         })
 
@@ -91,12 +118,7 @@ class Game:
                 continue
 
             for obj in chunk["objects"]:
-                obj_name = obj["name"]
-
-                sprite_path = BIOME_OBJECTS_CONFIG[obj_name]["sprite_path"]
-                if sprite_path is None:
-                    continue
-                obj_sprite = self.resource_manager.load_image(sprite_path)
+                obj_sprite = self.resource_manager.load_image(obj["sprite_path"])
 
                 obj_draw_x = obj["world_draw_x"] - self.camera.x
                 obj_draw_y = obj["world_draw_y"] - self.camera.y

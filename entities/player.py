@@ -177,16 +177,17 @@ class Player:
         surface.blit(current_frame, (draw_x, draw_y))
 
     def _collides_with_world(self, chunk_system: ChunkSystem):
-        start_tile_x = int(self.rect.left // settings.TILE_SIZE)
-        end_tile_x = int(self.rect.right // settings.TILE_SIZE)
-        start_tile_y = int(self.rect.top // settings.TILE_SIZE)
-        end_tile_y = int(self.rect.bottom // settings.TILE_SIZE)
+        start_sub_x = int(self.rect.left // settings.SUB_TILE_SIZE)
+        end_sub_x = int(self.rect.right // settings.SUB_TILE_SIZE)
+        start_sub_y = int(self.rect.top // settings.SUB_TILE_SIZE)
+        end_sub_y = int(self.rect.bottom // settings.SUB_TILE_SIZE)
 
         last_chunk_coords = None
         last_chunk = None
 
-        for tile_x in range(start_tile_x, end_tile_x + 1):
-            for tile_y in range(start_tile_y, end_tile_y + 1):
+        for sub_x in range(start_sub_x, end_sub_x + 1):
+            for sub_y in range(start_sub_y, end_sub_y + 1):
+                tile_x, tile_y = chunk_system.world_subtile_to_tile(sub_x, sub_y)
                 chunk_coords = chunk_system.world_to_chunk_tile(tile_x, tile_y)
 
                 if chunk_coords != last_chunk_coords:
@@ -200,15 +201,7 @@ class Player:
                 if BIOME_CONFIG[tile["biome_name"]]["blocked"]:
                     return True
 
-                tile_object = tile.get("object")
-                if tile_object and tile_object in OBJECT_PADDINGS:
-                    hb_w, hb_h = BIOME_OBJECTS_CONFIG[tile_object]["hit_box"]
-                    obj_rect = pygame.Rect(
-                        tile_x * settings.TILE_SIZE + OBJECT_PADDINGS[tile_object]["padding_x"],
-                        tile_y * settings.TILE_SIZE + OBJECT_PADDINGS[tile_object]["padding_y"],
-                        hb_w, hb_h
-                    )
-                    if self.rect.colliderect(obj_rect):
-                        return True
+                if (sub_x, sub_y) in last_chunk["blocked_subtiles"]:
+                    return True
 
         return False

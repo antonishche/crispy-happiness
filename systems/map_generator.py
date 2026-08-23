@@ -10,7 +10,7 @@ from config.map.biomes.biomes_config import (
 from config.map.biome_objects.biome_objects_config import (
     OBJECT_PADDINGS,
     BIOME_OBJECTS_CONFIG,
-    OBJECT_SPRITES_POSITIONS
+    OBJECT_SPRITES_GEOMETRY
 )
 
 
@@ -24,114 +24,205 @@ class MapGenerator:
         self.tile_size = settings.TILE_SIZE
         self.chunk_size = settings.CHUNK_SIZE
         self.chunk_pixel_size = settings.CHUNK_SIZE * settings.TILE_SIZE
-        self.placeholder_padding = (settings.TILE_SIZE - 20) // 2
+        self.placeholder_padding = (settings.TILE_SIZE - settings.PLACEHOLDER_RECT_SIZE) // 2
+        self.half_tile_size = settings.TILE_SIZE // 2
 
-    def generate_chunk(self, chunk_x, chunk_y):
-        chunk_tiles = self._get_chunk_tiles(chunk_x, chunk_y)
-        chunk_surface, chunk_objects = self._prepare_visuals(chunk_x, chunk_y, chunk_tiles)
-    
+    def generate_chunk_math(self, chunk_x, chunk_y):
+        chunk_world_x = chunk_x * self.chunk_pixel_size
+        chunk_world_y = chunk_y * self.chunk_pixel_size
+
+        chunk_tile_start_x = chunk_x * self.chunk_size
+        chunk_tile_start_y = chunk_y * self.chunk_size
+
+        chunk_tiles = self._get_chunk_tiles(chunk_tile_start_x, chunk_tile_start_y)
+        
+        blocked_subtiles = set()
+        for y, row in enumerate(chunk_tiles):
+            for x, tile in enumerate(row):
+                world_tile_x = chunk_tile_start_x + x
+                world_tile_y = chunk_tile_start_y + y
+
+                sub_base_x = world_tile_x * settings.SUB_DIVISIONS
+                sub_base_y = world_tile_y * settings.SUB_DIVISIONS
+
+                tile_config = BIOME_CONFIG[tile["biome_name"]]
+                if tile_config["blocked"]:
+                    for sy in range(settings.SUB_DIVISIONS):
+                        for sx in range(settings.SUB_DIVISIONS):
+                            blocked_subtiles.add((sub_base_x + sx, sub_base_y + sy))
+
+                tile_object = tile["object"]
+                if tile_object is not None:
+                    object_config = BIOME_OBJECTS_CONFIG[tile_object]
+                    if object_config["subtiles"]:
+                        world_object_subtiles = {
+                            (sub_base_x + sx, sub_base_y + sy) 
+                            for sx, sy in object_config["subtiles"]
+                        }
+                        blocked_subtiles |= world_object_subtiles
+
         return {
             "tiles": chunk_tiles,
-            "visual_surface": chunk_surface,
-            "objects": chunk_objects,
-            "world_x": chunk_x * self.chunk_pixel_size,
-            "world_y": chunk_y * self.chunk_pixel_size,
-            "timer": Timer(settings.CACHE_TIMEOUT)
+            "blocked_subtiles": blocked_subtiles,
+            "chunk_world_x": chunk_world_x,
+            "chunk_world_y": chunk_world_y,
+            "chunk_tile_start_x": chunk_tile_start_x,
+            "chunk_tile_start_y": chunk_tile_start_y
         }
 
-    def _get_chunk_tiles(self, chunk_x, chunk_y):
-        chunk_tiles = []
+    def generate_chunk_visual(self, raw_chunk_data):
+        chunk_world_x = raw_chunk_data["chunk_world_x"]
+        chunk_world_y = raw_chunk_data["chunk_world_y"]
+        
+        chunk_tiles = raw_chunk_data["tiles"]
+        blocked_subtiles = raw_chunk_data["blocked_subtiles"]
 
-        chunk_world_x = chunk_x * self.chunk_size
-        chunk_world_y = chunk_y * self.chunk_size
-
-        for y in range(self.chunk_size):
-            row = []
-            for x in range(self.chunk_size):
-                world_x = chunk_world_x + x
-                world_y = chunk_world_y + y
-
-                noise_value = self._get_noise(world_x, world_y)
-                biome_name = self._get_biome(noise_value)
-                tile = self._create_tile(biome_name, world_x, world_y)
-
-                row.append(tile)
-            chunk_tiles.append(row)
-        return chunk_tiles
-
-    def _draw_tile_placeholder(self, surface, color, tile_pixel_x, tile_pixel_y):
-        pygame.draw.rect(
-            surface,
-            color,
-            (tile_pixel_x, tile_pixel_y, self.tile_size, self.tile_size)
-        )
-
-    def _prepare_visuals(self, chunk_x, chunk_y, chunk_tiles):
         chunk_surface = pygame.Surface((self.chunk_pixel_size, self.chunk_pixel_size))
         chunk_objects = []
-
-        chunk_pixel_margin_x = chunk_x * self.chunk_pixel_size
-        chunk_pixel_margin_y = chunk_y * self.chunk_pixel_size
+        dummy_set = set()
 
         for y, row in enumerate(chunk_tiles):
             for x, tile in enumerate(row):
                 tile_pixel_x = x * self.tile_size
                 tile_pixel_y = y * self.tile_size
-                # surface
-                tile_config = BIOME_CONFIG[tile["biome_name"]]
-                if tile_config["sprite_path"] is not None:
-                    tile_sprite = self.resource_manager.load_image(tile_config["sprite_path"])
-                    chunk_surface.blit(tile_sprite, (tile_pixel_x, tile_pixel_y))
-                else:
-                    self._draw_tile_placeholder(chunk_surface, tile_config["color"], tile_pixel_x, tile_pixel_y)
-                # objects
-                tile_object = tile["object"]
-                if tile_object is not None:
-                    object_config = BIOME_OBJECTS_CONFIG[tile_object]
 
-                    if object_config["sprite_path"] is not None:
-                        tile_world_x = chunk_pixel_margin_x + tile_pixel_x
-                        tile_world_y = chunk_pixel_margin_y + tile_pixel_y
+                self._process_tile_biome(
+                    chunk_surface=chunk_surface,
+                    blocked_subtiles=dummy_set,
+                    tile=tile,
+                    tile_pixel_x=tile_pixel_x,
+                    tile_pixel_y=tile_pixel_y,
+                    sub_base_x=0,
+                    sub_base_y=0
+                )
 
-                        if BIOME_OBJECTS_CONFIG[tile_object]["hit_box"]:
-                            world_sort_y = tile_world_y + OBJECT_PADDINGS[tile_object]["bottom_margin"]
-                        else:
-                            world_sort_y = tile_world_y + settings.TILE_SIZE
+                if tile["object"] is not None:
+                    self._process_tile_object(
+                        chunk_surface=chunk_surface,
+                        chunk_objects=chunk_objects,
+                        blocked_subtiles=dummy_set,
+                        tile=tile,
+                        tile_pixel_x=tile_pixel_x,
+                        tile_pixel_y=tile_pixel_y,
+                        chunk_world_x=chunk_world_x,
+                        chunk_world_y=chunk_world_y,
+                        sub_base_x=0,
+                        sub_base_y=0
+                    )
 
-                        chunk_objects.append({
-                            "name": tile_object,
-                            "world_draw_x": tile_world_x + OBJECT_SPRITES_POSITIONS[tile_object]["x"],
-                            "world_draw_y": tile_world_y + OBJECT_SPRITES_POSITIONS[tile_object]["y"],
-                            "world_sort_y": world_sort_y
-                        })
-                    else:
-                        if object_config["hit_box"] is not None:
-                            pygame.draw.rect(
-                                chunk_surface,
-                                object_config["color"],
-                                (
-                                    tile_pixel_x + OBJECT_PADDINGS[tile_object]["padding_x"],
-                                    tile_pixel_y + OBJECT_PADDINGS[tile_object]["padding_y"],
-                                    object_config["hit_box"][0],
-                                    object_config["hit_box"][1]
-                                )
-                            )
-                        else:
-                            pygame.draw.rect(
-                                chunk_surface,
-                                (255, 255, 255),
-                                (
-                                    tile_pixel_x + self.placeholder_padding,
-                                    tile_pixel_y + self.placeholder_padding,
-                                    20,
-                                    20
-                                )
-                            )
+        return {
+            "tiles": chunk_tiles,
+            "visual_surface": chunk_surface,
+            "objects": chunk_objects,
+            "blocked_subtiles": blocked_subtiles,
+            "world_x": chunk_world_x,
+            "world_y": chunk_world_y,
+            "timer": Timer(settings.CACHE_TIMEOUT)
+        }
 
-        return chunk_surface, chunk_objects
+    def _get_chunk_tiles(self, chunk_tile_start_x, chunk_tile_start_y):
+        chunk_tiles = []
+
+        for y in range(self.chunk_size):
+            row = []
+            for x in range(self.chunk_size):
+                world_tile_x = chunk_tile_start_x + x
+                world_tile_y = chunk_tile_start_y + y
+
+                noise_value = self._get_noise(world_tile_x, world_tile_y)
+                biome_name = self._get_biome(noise_value)
+                tile = self._create_tile(biome_name, world_tile_x, world_tile_y)
+
+                row.append(tile)
+            chunk_tiles.append(row)
+        return chunk_tiles
+
+    def _process_tile_biome(
+        self, chunk_surface, blocked_subtiles,
+        tile, tile_pixel_x, tile_pixel_y,
+        sub_base_x, sub_base_y
+    ):
+        tile_config = BIOME_CONFIG[tile["biome_name"]]
+
+        if tile_config["blocked"]:
+            for sy in range(settings.SUB_DIVISIONS):
+                for sx in range(settings.SUB_DIVISIONS):
+                    blocked_subtiles.add((sub_base_x + sx, sub_base_y + sy))
+
+        if tile_config["sprite_path"] is not None:
+            tile_sprite = self.resource_manager.load_image(tile_config["sprite_path"])
+            chunk_surface.blit(tile_sprite, (tile_pixel_x, tile_pixel_y))
+        else:
+            pygame.draw.rect(
+                chunk_surface,
+                tile_config["color"],
+                (tile_pixel_x, tile_pixel_y, self.tile_size, self.tile_size)
+            )
+
+    def _process_tile_object(
+        self, chunk_surface, chunk_objects, blocked_subtiles,
+        tile, tile_pixel_x, tile_pixel_y,
+        chunk_world_x, chunk_world_y,
+        sub_base_x, sub_base_y 
+    ):
+        tile_object = tile["object"]
+        object_config = BIOME_OBJECTS_CONFIG[tile_object]
+        sprite_index = tile["sprite_index"]
+        sprites_geometry = OBJECT_SPRITES_GEOMETRY[tile_object]
+
+        if object_config["subtiles"]:
+            for sx, sy in object_config["subtiles"]:
+                blocked_subtiles.add((sub_base_x + sx, sub_base_y + sy))
+
+        if sprites_geometry:
+            geom = sprites_geometry[sprite_index]
+
+            tile_world_pixel_x = chunk_world_x + tile_pixel_x
+            tile_world_pixel_y = chunk_world_y + tile_pixel_y
+
+            if object_config["hit_box"]:
+                world_sort_y = tile_world_pixel_y + OBJECT_PADDINGS[tile_object]["bottom_margin"]
+            else:
+                world_sort_y = tile_world_pixel_y + self.half_tile_size
+
+            chunk_objects.append({
+                "name": tile_object,
+                "sprite_path": geom["path"],
+                "world_draw_x": tile_world_pixel_x + geom["sprite_x"],
+                "world_draw_y": tile_world_pixel_y + geom["sprite_y"],
+                "world_sort_y": world_sort_y
+            })
+        else:
+            if object_config["hit_box"] is not None:
+                pygame.draw.rect(
+                    chunk_surface,
+                    object_config["color"],
+                    (
+                        tile_pixel_x + OBJECT_PADDINGS[tile_object]["padding_x"],
+                        tile_pixel_y + OBJECT_PADDINGS[tile_object]["padding_y"],
+                        object_config["hit_box"][0],
+                        object_config["hit_box"][1]
+                    )
+                )
+            else:
+                pygame.draw.rect(
+                    chunk_surface,
+                    (255, 255, 255),
+                    (
+                        tile_pixel_x + self.placeholder_padding,
+                        tile_pixel_y + self.placeholder_padding,
+                        settings.PLACEHOLDER_RECT_SIZE,
+                        settings.PLACEHOLDER_RECT_SIZE
+                    )
+                )
 
     def _get_noise(self, x, y):
-        return pnoise2(x / 20, y / 20, octaves = 4, base = self.seed)
+        return pnoise2(
+            x / settings.NOISE_SCALE_x,
+            y / settings.NOISE_SCALE_y,
+            octaves = settings.NOISE_OCTAVES,
+            base = self.seed
+        )
 
     def _get_biome(self, noise_value):
         for spread, biome_name in BIOMES_DISTRIBUTION:
@@ -144,12 +235,18 @@ class MapGenerator:
             return {
                 "biome_name": biome_name,
                 "object": None,
+                "sprite_index": 0
             }
         
         config = BIOME_CONFIG[biome_name]
         spawned_object = None
+        sprite_index = 0
 
-        base_hash = (world_x * 73856093) ^ (world_y * 19349663) ^ (self.seed * 83492791)
+        base_hash = (
+            (world_x * settings.HASH_MULTIPLIER_X) ^
+            (world_y * settings.HASH_MULTIPLIER_Y) ^
+            (self.seed * settings.HASH_MULTIPLIER_SEED)
+        )
 
         for i, (obj_name, chance) in enumerate(config["objects_chance"].items()):
             obj_hash = base_hash ^ (i << 16)
@@ -157,9 +254,16 @@ class MapGenerator:
 
             if pseudo_rand <= chance:
                 spawned_object = obj_name
+
+                obj_config = BIOME_OBJECTS_CONFIG[obj_name]
+                if obj_config["sprite_paths"]:
+                    variations_count = len(obj_config["sprite_paths"])
+                    sprite_hash = base_hash ^ settings.SPRITE_VARIATION_SALT
+                    sprite_index = sprite_hash % variations_count
                 break
 
         return {
             "biome_name": biome_name,
             "object": spawned_object,
+            "sprite_index": sprite_index
         }
