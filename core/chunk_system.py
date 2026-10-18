@@ -1,6 +1,6 @@
 import queue
-from utils.timer import Timer
-import settings as settings
+from helpers.utils.timer import Timer
+import settings.game_settings as game_settings
 
 
 class ChunkSystem:
@@ -9,12 +9,13 @@ class ChunkSystem:
         # cash
         self.loaded_chunks = {}
         self.cached_chunks = {}
+        self.all_blocked_subtiles = set()
         # queue
         self.generation_queue = queue.Queue()
         self.finished_queue = queue.Queue()
         self.pending_chunks = set()
         # other
-        self.chunk_pixel_size = settings.CHUNK_SIZE * settings.TILE_SIZE
+        self.chunk_pixel_size = game_settings.CHUNK_SIZE * game_settings.TILE_SIZE
         self.current_player_chunk = None
 
     def _bg_generation_worker(self, math_generator_func):
@@ -38,13 +39,13 @@ class ChunkSystem:
         return (chunk_x, chunk_y)
 
     def world_to_chunk_tile(self, tile_x, tile_y):
-        chunk_x = tile_x // settings.CHUNK_SIZE
-        chunk_y = tile_y // settings.CHUNK_SIZE
+        chunk_x = tile_x // game_settings.CHUNK_SIZE
+        chunk_y = tile_y // game_settings.CHUNK_SIZE
         return (chunk_x, chunk_y)
 
     def world_subtile_to_tile(self, sub_x, sub_y):
-        tile_x = sub_x // settings.SUB_DIVISIONS
-        tile_y = sub_y // settings.SUB_DIVISIONS
+        tile_x = sub_x // game_settings.SUB_DIVISIONS
+        tile_y = sub_y // game_settings.SUB_DIVISIONS
         return (tile_x, tile_y)
 
     def get_chunk_coords_around(self, center_chunk_x, center_chunk_y):
@@ -78,6 +79,7 @@ class ChunkSystem:
                 timer = chunk["timer"]  # type: Timer
                 timer.reset()
                 self.loaded_chunks[coord] = chunk
+                self.all_blocked_subtiles |= chunk["blocked_subtiles"]
                 continue
 
             self.pending_chunks.add(coord)
@@ -103,8 +105,8 @@ class ChunkSystem:
             self.pending_chunks.discard(coord)
 
             full_chunk = visual_generator_func(raw_chunk_data)
-            
             self.loaded_chunks[coord] = full_chunk
+            self.all_blocked_subtiles |= full_chunk["blocked_subtiles"]
             
             self.finished_queue.task_done()
             chunks_processed += 1
@@ -120,6 +122,7 @@ class ChunkSystem:
             timer = chunk["timer"]  # type: Timer
             timer.start()
             self.cached_chunks[coord] = chunk
+            self.all_blocked_subtiles -= chunk["blocked_subtiles"]
 
     def _delete_expired_chunks(self):
         if not self.cached_chunks:

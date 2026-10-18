@@ -30,6 +30,7 @@
     "flower": {
         "color": [42, 212, 87],
         "category": "flowers",
-        "folder": "pink_flower" 
+        "folder": "pink_flower",
+        "sprite_bottom_margin": 5
     }
 }

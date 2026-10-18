@@ -1,7 +1,7 @@
-import settings as settings
-from utils.file_loader import load_json
-from utils.path_constructor import create_path
-import paths.paths as paths
+import settings.game_settings as game_settings
+from helpers.utils.file_loader import load_json
+from helpers.utils.path_constructor import create_path
+import helpers.paths.paths as paths
 
 
 biomes = load_json(paths.BIOMES_JSON)
@@ -16,7 +16,7 @@ BIOME_CONFIG = {
             if obj_name in biome_objects
         },
         "color": tuple(data.get("color", [255, 255, 255])),
-        "sprite_path": create_path(paths.BIOMES_SPRITES, data["sprite_path"]) if data.get("sprite_path") else None
+        "sprite_path": create_path(paths.BIOMES_SPRITES_PATH, data["sprite_path"]) if data.get("sprite_path") else None
     }
     for biom_name, data in biomes.items()
 }

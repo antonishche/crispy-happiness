@@ -1,18 +1,18 @@
 import glob
 import imagesize
-import settings as settings
-from utils.path_constructor import create_path, path_exists
-import paths.paths as paths
-from config.map.biomes.biomes_config import biome_objects  # type: dict
+import settings.game_settings as game_settings
+from helpers.utils.path_constructor import create_path, path_exists
+import helpers.paths.paths as paths
+from config.map.biomes_config import biome_objects  # type: dict
 
 
 BIOME_OBJECTS_CONFIG = {}
 OBJECT_PADDINGS = {}
 OBJECT_SPRITES_GEOMETRY = {}
 
-half_tile_size = settings.TILE_SIZE // 2
-SUB_DIVISIONS = settings.SUB_DIVISIONS
-SUB_TILE_SIZE = settings.SUB_TILE_SIZE
+half_tile_size = game_settings.TILE_SIZE // 2
+SUB_DIVISIONS = game_settings.SUB_DIVISIONS
+SUB_TILE_SIZE = game_settings.SUB_TILE_SIZE
 
 for object_name, data in biome_objects.items():
     hit_box = (
@@ -25,11 +25,11 @@ for object_name, data in biome_objects.items():
     search_dir = None
 
     if data.get("category") and data.get("folder"):
-        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES, data["category"], data["folder"])
+        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES_PATH, data["category"], data["folder"])
     elif data.get("folder"):
-        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES, data["folder"])
+        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES_PATH, data["folder"])
     elif data.get("category"):
-        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES, data["category"])
+        search_dir = create_path(paths.BIOME_OBJECTS_SPRITES_PATH, data["category"])
 
     if search_dir and path_exists(search_dir):
         search_pattern = create_path(search_dir, "*.png")
@@ -37,8 +37,8 @@ for object_name, data in biome_objects.items():
 
     object_subtiles = set()
     if hit_box:
-        pad_x = (settings.TILE_SIZE - hit_box[0]) // 2
-        pad_y = (settings.TILE_SIZE - hit_box[1]) // 2
+        pad_x = (game_settings.TILE_SIZE - hit_box[0]) // 2
+        pad_y = (game_settings.TILE_SIZE - hit_box[1]) // 2
 
         left = pad_x
         right = pad_x + hit_box[0]
@@ -64,11 +64,11 @@ for object_name, data in biome_objects.items():
     }
 
     if hit_box:
-        pad_y = (settings.TILE_SIZE - hit_box[1]) // 2
+        pad_y = (game_settings.TILE_SIZE - hit_box[1]) // 2
         OBJECT_PADDINGS[object_name] = {
-            "padding_x": (settings.TILE_SIZE - hit_box[0]) // 2,
+            "padding_x": (game_settings.TILE_SIZE - hit_box[0]) // 2,
             "padding_y": pad_y,
-            "bottom_margin": settings.TILE_SIZE - pad_y
+            "bottom_margin": game_settings.TILE_SIZE - pad_y
         }
 
     OBJECT_SPRITES_GEOMETRY[object_name] = []

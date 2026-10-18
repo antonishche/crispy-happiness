@@ -1,6 +1,6 @@
 import copy
-from utils.file_loader import load_csv
-from paths.paths import (
+from helpers.utils.file_loader import load_csv
+from helpers.paths.paths import (
     ITEMS_WEAPONS_CSV,
     ITEMS_ARMOR_CSV,
     ITEMS_FOOD_CSV,

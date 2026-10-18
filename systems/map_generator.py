@@ -1,13 +1,13 @@
 import pygame
 from noise import pnoise2  # type: ignore
 from core.resource_manager import ResourceManager
-import settings as settings
-from utils.timer import Timer
-from config.map.biomes.biomes_config import (
+import settings.game_settings as settings
+from helpers.utils.timer import Timer
+from config.map.biomes_config import (
     BIOME_CONFIG,
     BIOMES_DISTRIBUTION
 )
-from config.map.biome_objects.biome_objects_config import (
+from config.map.biome_objects_config import (
     OBJECT_PADDINGS,
     BIOME_OBJECTS_CONFIG,
     OBJECT_SPRITES_GEOMETRY

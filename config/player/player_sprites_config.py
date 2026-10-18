@@ -1,17 +1,9 @@
-from utils.file_loader import load_json
-import paths.paths as paths
-from utils.path_constructor import create_path
+import helpers.paths.paths as paths
+from helpers.utils.entity_sprites_loader import load_entity_sprites_config
+from settings.player_settings import PLAYER_SETTINGS
 
-
-player_sprites = load_json(paths.PLAYER_SPRITES_JSON)
-
-PLAYER_SPRITES = {
-    state_direction: {
-        "count": data.get("count", 1),
-        "width_count": data.get("width_count", 1),
-        "height_count": data.get("height_count", 1),
-        "frame_duration": data.get("frame_duration", 0.15),
-        "path": create_path(paths.PLAYER_SPRITES, data["path"]) if data.get("path") else None
-    }
-    for state_direction, data in player_sprites.items()
-}
+PLAYER_SPRITES = load_entity_sprites_config(
+    json_path=paths.PLAYER_SPRITES_JSON,
+    main_path=paths.PLAYER_SPRITES_PATH,
+    target_height=PLAYER_SETTINGS["target_sprite_height"]
+)

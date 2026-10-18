@@ -1,0 +1,18 @@
+{
+    "speed": 2,
+    "acceleration": 0.5,
+    "friction": 0.8,
+
+    "hit_box": [15, 15],
+
+    "type": "green_petyx",
+    "target_sprite_height": 50,
+    "loaded_sprite_direction": "right",
+    "target_animations": ["idle", "walk", "dead", "hit"],
+
+    "damage": 3,
+    "max_hp": 40,
+
+    "reaction_range": 200,
+    "action_range": 40
+}

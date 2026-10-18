@@ -1,0 +1,14 @@
+{
+    "speed": 5,
+    "acceleration": 0.8,
+    "friction": 0.8,
+    "hit_box": [15, 15],
+    "type": "player",
+    "start_direction": "left",
+    "target_sprite_height": 64,
+    "start_state": "idle",
+    "loaded_sprite_direction": "left",
+    "target_animations": ["idle", "walk", "dead", "hit", "sleep"],
+    "damage": 20,
+    "max_hp": 100
+}

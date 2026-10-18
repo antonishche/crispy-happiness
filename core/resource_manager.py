@@ -1,5 +1,5 @@
 import pygame
-from functions.placeholder_generator import generate_placeholder_sprites
+from helpers.functions.placeholder_generator import generate_placeholder_sprites
 
 
 class ResourceManager:
