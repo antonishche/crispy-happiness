@@ -75,15 +75,18 @@ class Entity:
         self.x = self.rect.centerx
         self.y = self.rect.bottom
 
-    def _animate(self, dt):
-        current_key = f"{self.type}_{self.state}_{self.direction}"
+    def _animate(self, dt, state_override=None):
+        # Allows an overlay animation (e.g. player attack) without changing
+        # the logical movement state.
+        animation_state = state_override or self.state
+        current_key = f"{self.type}_{animation_state}_{self.direction}"
         
         if self.last_full_key != current_key:
             self.last_full_key = current_key
             frames = self.resource_manager.get_animation(current_key)
 
             if not frames:
-                fallback_key = f"default_{self.state}_{self.direction}"
+                fallback_key = f"default_{animation_state}_{self.direction}"
                 frames = self.resource_manager.get_animation(fallback_key) or \
                     self.resource_manager.get_animation(f"default_idle_{self.loaded_sprite_direction or 'left'}")
                 
@@ -95,7 +98,7 @@ class Entity:
 
             self.cached_frames = frames
 
-            config_key = f"{self.state}_{self.direction}"
+            config_key = f"{animation_state}_{self.direction}"
             sprite_config = self.sprites_config.get(config_key, {})
             
             self.frame_duration = sprite_config.get("frame_duration", 0.15)
@@ -112,7 +115,7 @@ class Entity:
         if self.frame_timer >= self.frame_duration:
             self.frame_timer -= self.frame_duration
 
-            if self.state in {"dead", "sleep", "attack", "hit"}:
+            if animation_state in {"dead", "sleep", "attack", "hit"}:
                 if self.frame_index < len(frames) - 1:
                     self.frame_index += 1
                 else:

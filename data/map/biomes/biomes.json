@@ -5,44 +5,35 @@
             "tree_fir": 0.01,
             "tree_oak": 0.01,
             "stone": 0.005,
-            "flower": 0.02,
-            "bush": 0.05
+            "flower": 0.03,
+            "bush": 0.06
         },
         "color": [34, 139, 34],
-        "sprite_path": "grass_debug.png"
+        "sprite_path": "gg.png"
     },
     "forest": {
         "blocked": false,
         "objects_chance": {
-            "tree_oak": 0.05,
-            "stone": 0.05,
-            "flower": 0.05
+            "tree_oak": 0.06,
+            "tree_fir": 0.03,
+            "stone": 0.02,
+            "bush": 0.03,
+            "flower": 0.02
         },
         "color": [0, 100, 0],
-        "sprite_path": "forest_debug.png"
+        "sprite_path": "ff.png"
     },
     "desert": {
         "blocked": false,
         "objects_chance": {
-            "stone": 0.05
+            "stone": 0.06
         },
         "color": [237, 201, 175],
-        "sprite_path": "desert_debug.png"
-    },
-    "mountain": {
-        "blocked": true,
-        "objects_chance": {
-            "stone": 0.40
-        },
-        "color": [128, 128, 128]
+        "sprite_path": "ss.png"
     },
     "water": {
         "blocked": true,
         "color": [19, 132, 237],
-        "sprite_path": "water_debug.png"
-    },
-    "ocean": {
-        "blocked": true,
-        "color": [66, 75, 245]
+        "sprite_path": "ww.png"
     }
 }

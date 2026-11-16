@@ -1,6 +1,5 @@
 import os
 import helpers.paths.paths as paths
-from helpers.utils.file_loader import load_json
 from helpers.utils.settings_parser import parse_settings
 from helpers.utils.entity_sprites_loader import load_entity_sprites_config
 
@@ -19,6 +18,13 @@ def load_all_enemies():
         sprites_json_path = os.path.join(entity_data_dir, f"{folder_name}_sprites.json")
         
         entity_assets_dir = os.path.join(paths.ENEMIES_SPRITES_PATH, folder_name)
+
+        if not os.path.exists(settings_json_path) or not os.path.exists(sprites_json_path):
+            continue
+
+        if os.path.getsize(settings_json_path) == 0 or os.path.getsize(sprites_json_path) == 0:
+            print(f"Warning: one file of dir '{folder_name}' is empty. Skip...")
+            continue
 
         if not os.path.exists(settings_json_path) or not os.path.exists(sprites_json_path):
             continue

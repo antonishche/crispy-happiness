@@ -5,7 +5,8 @@
         "height_count": 1,
         "frame_duration": 0.15,
         "path": "idle_right.png",
-        "shadow_size": [40, 15]
+        "shadow_size": [40, 15],
+        "alpha": 80
     },
     "walk_right": {
         "count": 4,
@@ -13,7 +14,8 @@
         "height_count": 1,
         "frame_duration": 0.10,
         "path": "walk_right.png",
-        "shadow_size": [40, 15]
+        "shadow_size": [40, 15],
+        "alpha": 80
     },
     "hit_right": {
         "count": 3,
@@ -21,7 +23,8 @@
         "height_count": 1,
         "frame_duration": 0.15,
         "path": "hit_right.png",
-        "shadow_size": [50, 15]
+        "shadow_size": [50, 15],
+        "alpha": 80
     },
     "dead_right": {
         "count": 1,
@@ -29,6 +32,7 @@
         "height_count": 1,
         "frame_duration": 0.30,
         "path": "dead_right.png",
-        "shadow_size": [30, 15]
+        "shadow_size": [30, 15],
+        "alpha": 80
     }
 }

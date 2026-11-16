@@ -4,24 +4,33 @@ import settings.game_settings as game_settings
 from helpers.utils.path_constructor import create_path, path_exists
 import helpers.paths.paths as paths
 from config.map.biomes_config import biome_objects  # type: dict
+from helpers.utils.units import parse_size
 
 
 BIOME_OBJECTS_CONFIG = {}
-OBJECT_PADDINGS = {}
 OBJECT_SPRITES_GEOMETRY = {}
 
-half_tile_size = game_settings.TILE_SIZE // 2
-SUB_DIVISIONS = game_settings.SUB_DIVISIONS
 SUB_TILE_SIZE = game_settings.SUB_TILE_SIZE
 
-for object_name, data in biome_objects.items():
-    hit_box = (
-        tuple(data["hit_box"])
-        if (data.get("hit_box") and any(data["hit_box"]))
-        else None
-    )
 
-    sprite_paths = []
+def _to_sub(px):
+    return -(-px // SUB_TILE_SIZE)  # округление вверх
+
+
+def _validate_unit(data, field_name, obj_name):
+    raw = data.get(field_name)
+    if raw is None:
+        return
+    if isinstance(raw, dict):
+        unit = raw.get("unit")
+        if unit != "sub":
+            raise ValueError(
+                f"[biome_objects] {obj_name}.{field_name}: unit='{unit}' "
+                f"не поддерживается, используй 'sub'"
+            )
+
+
+def _find_sprite_paths(data):
     search_dir = None
 
     if data.get("category") and data.get("folder"):
@@ -32,65 +41,76 @@ for object_name, data in biome_objects.items():
         search_dir = create_path(paths.BIOME_OBJECTS_SPRITES_PATH, data["category"])
 
     if search_dir and path_exists(search_dir):
-        search_pattern = create_path(search_dir, "*.png")
-        sprite_paths = sorted(glob.glob(search_pattern))
+        return sorted(glob.glob(create_path(search_dir, "*.png")))
+    return []
 
-    object_subtiles = set()
+
+for object_name, data in biome_objects.items():
+    _validate_unit(data, "hit_box", object_name)
+    _validate_unit(data, "margin", object_name)
+
+    hit_box = parse_size(data.get("hit_box"))
+    if hit_box and not any(hit_box):
+        hit_box = None
+
+    margin = parse_size(data.get("margin")) or (0, 0)
+
+    # footprint == (0, 0) для объектов без hit_box — намеренно:
+    # map_generator трактует их как декор (кластерный спавн, без коллизии),
+    # а при отрисовке использует max(fw, 1) только для объектов с hit_box.
+    footprint = (_to_sub(hit_box[0]), _to_sub(hit_box[1])) if hit_box else (0, 0)
+    margin_sub = (_to_sub(margin[0]), _to_sub(margin[1]))
+
     if hit_box:
-        pad_x = (game_settings.TILE_SIZE - hit_box[0]) // 2
-        pad_y = (game_settings.TILE_SIZE - hit_box[1]) // 2
+        foot_w = footprint[0] * SUB_TILE_SIZE
+        foot_h = footprint[1] * SUB_TILE_SIZE
+        sort_offset = foot_h
+    else:
+        foot_w = foot_h = SUB_TILE_SIZE
+        sort_offset = SUB_TILE_SIZE
 
-        left = pad_x
-        right = pad_x + hit_box[0]
-        top = pad_y
-        bottom = pad_y + hit_box[1]
-
-        for sy in range(SUB_DIVISIONS):
-            for sx in range(SUB_DIVISIONS):
-                st_left = sx * SUB_TILE_SIZE
-                st_right = st_left + SUB_TILE_SIZE
-                st_top = sy * SUB_TILE_SIZE
-                st_bottom = st_top + SUB_TILE_SIZE
-
-                if not (st_right <= left or st_left >= right or st_bottom <= top or st_top >= bottom):
-                    object_subtiles.add((sx, sy))
+    sprite_paths = _find_sprite_paths(data)
 
     BIOME_OBJECTS_CONFIG[object_name] = {
         "name": object_name,
         "color": tuple(data.get("color", [0, 0, 0])),
         "hit_box": hit_box,
+        "footprint": footprint,
+        "margin_sub": margin_sub,
+        "sort_offset": sort_offset,
         "sprite_paths": sprite_paths if sprite_paths else None,
-        "subtiles": object_subtiles
     }
 
-    if hit_box:
-        pad_y = (game_settings.TILE_SIZE - hit_box[1]) // 2
-        OBJECT_PADDINGS[object_name] = {
-            "padding_x": (game_settings.TILE_SIZE - hit_box[0]) // 2,
-            "padding_y": pad_y,
-            "bottom_margin": game_settings.TILE_SIZE - pad_y
-        }
+    sprite_bottom_margin = data.get("sprite_bottom_margin", 0)
+    sprite_left_margin = data.get("sprite_left_margin", 0)
 
     OBJECT_SPRITES_GEOMETRY[object_name] = []
 
-    if sprite_paths:
-        for path in sprite_paths:
-            w, h = imagesize.get(path)
-            half_width = w // 2
-            sprite_bottom_margin = data.get("sprite_bottom_margin", 0)
-            sprite_left_margin = data.get("sprite_left_margin", 0)
+    for path in sprite_paths:
+        w, h = imagesize.get(path)
+        half_width = w // 2
 
-            if hit_box:
-                sprite_x = half_tile_size - half_width - sprite_left_margin
-                sprite_y = OBJECT_PADDINGS[object_name]["bottom_margin"] - h + sprite_bottom_margin
-            else:
-                sprite_x = half_tile_size - half_width - sprite_left_margin
-                sprite_y = half_tile_size - h + sprite_bottom_margin
+        if hit_box:
+            sprite_x = foot_w // 2 - half_width - sprite_left_margin
+            sprite_y = foot_h - h + sprite_bottom_margin
+        else:
+            # декор: центрируем по субтайлу, "сидим" на его нижнем крае
+            sprite_x = SUB_TILE_SIZE // 2 - half_width - sprite_left_margin
+            sprite_y = SUB_TILE_SIZE - h + sprite_bottom_margin
 
-            OBJECT_SPRITES_GEOMETRY[object_name].append({
-                "path": path,
-                "half_width": half_width,
-                "height": h,
-                "sprite_x": sprite_x,
-                "sprite_y": sprite_y
-            })
+        OBJECT_SPRITES_GEOMETRY[object_name].append({
+            "path": path,
+            "sprite_x": sprite_x,
+            "sprite_y": sprite_y
+        })
+
+
+def debug_dump():
+    for name, cfg in BIOME_OBJECTS_CONFIG.items():
+        sprites = len(cfg["sprite_paths"] or [])
+        kind = "solid" if cfg["hit_box"] else "decor"
+        print(
+            f"{name:10s} [{kind:5s}] footprint={cfg['footprint']} "
+            f"margin={cfg['margin_sub']} sort={cfg['sort_offset']} "
+            f"sprites={sprites}"
+        )

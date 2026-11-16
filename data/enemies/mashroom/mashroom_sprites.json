@@ -1,0 +1,42 @@
+{
+    "idle_left": {
+        "count": 4,
+        "width_count": 4,
+        "height_count": 1,
+        "frame_duration": 0.20,
+        "path": "idle_left.png",
+        "shadow_size": [30, 15],
+        "shadow_y_margin": -2,
+        "alpha": 80
+    },
+    "walk_left": {
+        "count": 6,
+        "width_count": 6,
+        "height_count": 1,
+        "frame_duration": 0.15,
+        "path": "walk_left.png",
+        "shadow_size": [30, 15],
+        "shadow_y_margin": -2,
+        "alpha": 80
+    },
+    "hit_left": {
+        "count": 4,
+        "width_count": 4,
+        "height_count": 1,
+        "frame_duration": 0.15,
+        "path": "hit_left.png",
+        "shadow_size": [50, 15],
+        "shadow_y_margin": -2,
+        "alpha": 80
+    },
+    "dead_left": {
+        "count": 4,
+        "width_count": 4,
+        "height_count": 1,
+        "frame_duration": 0.25,
+        "path": "dead_left.png",
+        "shadow_size": [30, 15],
+        "shadow_y_margin": -2,
+        "alpha": 80
+    }
+}

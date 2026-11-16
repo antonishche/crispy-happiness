@@ -6,7 +6,8 @@
         "frame_duration": 0.15,
         "path": "idle_left.png",
         "shadow_size": [25, 15],
-        "shadow_y_margin": -2
+        "shadow_y_margin": -2,
+        "alpha": 80
     },
     "walk_left": {
         "count": 4,
@@ -15,7 +16,8 @@
         "frame_duration": 0.10,
         "path": "walk_left.png",
         "shadow_size": [35, 15],
-        "shadow_y_margin": -2
+        "shadow_y_margin": -2,
+        "alpha": 80
     },
     "hit_left": {
         "count": 2,
@@ -24,7 +26,8 @@
         "frame_duration": 0.20,
         "path": "hit_left.png",
         "shadow_size": [30, 15],
-        "shadow_y_margin": -2
+        "shadow_y_margin": -2,
+        "alpha": 80
     },
     "dead_left": {
         "count": 2,
@@ -33,7 +36,8 @@
         "frame_duration": 0.30,
         "path": "dead_left.png",
         "shadow_size": [50, 15],
-        "shadow_y_margin": -2
+        "shadow_y_margin": -2,
+        "alpha": 80
     },
     "sleep_left": {
         "count": 2,
@@ -42,6 +46,7 @@
         "frame_duration": 0.30,
         "path": "dead_left.png",
         "shadow_size": [50, 15],
-        "shadow_y_margin": -2
+        "shadow_y_margin": -2,
+        "alpha": 80
     }
 }

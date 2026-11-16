@@ -31,7 +31,7 @@ def load_entity_sprites_config(json_path, main_path, target_height):
         shadow_w, shadow_h = tuple(data.get("shadow_size", [0, 0]))
         shadow_x_margin = data.get("shadow_x_margin", 0)
         shadow_y_margin = data.get("shadow_y_margin", 2)
-        alpha = data.get("alpha", 80)
+        alpha = data.get("alpha", 0)
         shadow_surf = make_shadow_surface(shadow_w, shadow_h, alpha)
 
         result[state_direction] = {

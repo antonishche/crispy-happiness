@@ -1,0 +1,18 @@
+{
+    "speed": 2,
+    "acceleration": 0.5,
+    "friction": 0.8,
+
+    "hit_box": [15, 15],
+
+    "type": "mashroom",
+    "target_sprite_height": 50,
+    "loaded_sprite_direction": "left",
+    "target_animations": ["idle", "walk", "dead", "hit"],
+
+    "damage": 12,
+    "max_hp": 50,
+
+    "reaction_range": 200,
+    "action_range": 50
+}

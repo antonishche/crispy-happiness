@@ -24,3 +24,7 @@ class Camera:
 
     def reverse_point(self, screen_x, screen_y):
         return (int(screen_x + self.x), int(screen_y + self.y))
+
+    def snap_to(self, target):
+        self.x = target.x - self.half_width
+        self.y = target.y - self.half_height

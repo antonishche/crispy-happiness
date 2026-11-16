@@ -1,7 +1,8 @@
 {
     "tree_oak": {
         "color": [139, 69, 19],
-        "hit_box": [40, 20],
+        "hit_box": {"value": [7, 3], "unit": "sub"},
+        "margin": {"value": [2, 1], "unit": "sub"},
         "category": "trees",
         "folder": "oak",
         "sprite_bottom_margin": 10,
@@ -9,14 +10,16 @@
     },
     "tree_fir": {
         "color": [139, 69, 19],
-        "hit_box": [20, 10],
+        "hit_box": {"value": [4, 2], "unit": "sub"},
+        "margin": {"value": [1, 1], "unit": "sub"},
         "category": "trees",
         "folder": "fir",
         "sprite_bottom_margin": 5
     },
     "stone": {
         "color": [169, 169, 169],
-        "hit_box": [34, 15],
+        "hit_box": {"value": [3, 1], "unit": "sub"},
+        "margin": {"value": [1, 0], "unit": "sub"},
         "category": "stones",
         "folder": "stone",
         "sprite_bottom_margin": 5
@@ -25,7 +28,7 @@
         "color": [139, 69, 19],
         "category": "bushes",
         "folder": "bush",
-        "sprite_bottom_margin": 10
+        "sprite_bottom_margin": 14
     },
     "flower": {
         "color": [42, 212, 87],
