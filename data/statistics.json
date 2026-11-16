@@ -1,1 +1,9 @@
-[]
+[
+    {
+        "id": "ecf03908-c4ea-454f-b271-efcf6022df71",
+        "world_name": "Мир",
+        "kills": 0,
+        "difficulty": "Лёгкий",
+        "finished_at": "2026-11-16T19:45:57+00:00"
+    }
+]
